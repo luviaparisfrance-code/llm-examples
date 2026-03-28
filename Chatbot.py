@@ -1,29 +1,94 @@
-from openai import OpenAI
 import streamlit as st
 
-with st.sidebar:
-    openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
-    "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
-    "[View the source code](https://github.com/streamlit/llm-examples/blob/main/Chatbot.py)"
-    "[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/streamlit/llm-examples?quickstart=1)"
+# 1. الداتا الطبية الموسوعية الشاملة
+LUVIA_ENCYCLOPEDIA = {
+    "✨ الوجه والجمال الطبيعي": {
+        "تسمين الوجه ونفخ الخدود": {
+            "تحليل": "ضمور الطبقة الدهنية الموضعية ونقص التغذية السريرية.",
+            "علاج": "زيت الحلزون المركز + كريم الفولوفيلين + زبدة الشيا (مساج دائري).",
+            "مسموح": "السمسم، المكسرات النيئة، التمر، الحليب الذهبي، أوميغا 3.",
+            "ممنوع": "الكافيين المفرط، التدخين، السهر، المشروبات الغازية.",
+            "نتائج": "45-60 يوماً"
+        },
+        "بديل البوتكس وشد التجاعيد": {
+            "تحليل": "تشنج العضلات التعبيرية وتكسر روابط الكولاجين.",
+            "علاج": "ببتيدات الأرجيريلين 10% + ماتريكسيل 3000 + هيالورونيك.",
+            "مسموح": "شوربة العظام، التوت، فيتامين C، شرب الماء بكثرة.",
+            "ممنوع": "السكر الأبيض، الأملاح الزائدة، الشمس المباشرة.",
+            "نتائج": "60-90 يوماً"
+        }
+    },
+    "💇 الشعر والأظافر (إنبات)": {
+        "تساقط الشعر والفراغات": {
+            "تحليل": "خمول البصيلات نتيجة نقص التروية أو تحسس هرموني (DHT).",
+            "علاج": "تونر الروزماري المقطر + شامبو الكافيين والبيوتين.",
+            "مسموح": "البيض، الجرجير، بذور اليقطين، المأكولات البحرية.",
+            "ممنوع": "الألبان المفرطة، المقليات، السكريات، التوتر العالي.",
+            "نتائج": "90-180 يوماً"
+        }
+    },
+    "⏳ الرشاقة ونحت القوام": {
+        "تنحيف البطن والخصر": {
+            "تحليل": "مقاومة أنسولين وتراكم دهون بيضاء عنيدة.",
+            "علاج": "كريم كافيين حراري + زيت الفلفل الأسود (لف تنحيفي).",
+            "مسموح": "الماتشا، خل التفاح الطبيعي، البروتين، الألياف.",
+            "ممنوع": "الدقيق الأبيض، المعجنات، الأكل بعد 8 مساءً.",
+            "نتائج": "90 يوماً"
+        }
+    }
+}
 
-st.title("💬 Chatbot")
-st.caption("🚀 A Streamlit chatbot powered by OpenAI")
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+# --- التصميم الملكي ---
+st.set_page_config(page_title="LUVIA PARIS", layout="centered")
+st.markdown("<h1 style='text-align: center; color: #D4AF37;'>⚜️ LUVIA PARIS ⚜️</h1>", unsafe_allow_html=True)
 
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+# 2. السجل الطبي الشامل (قلب، كلى، سكر، ضغط)
+with st.expander("👤 سجل بيانات العميل الطبية", expanded=True):
+    u_name = st.text_input("اسم العميل:")
+    c1, c2 = st.columns(2)
+    u_age = c1.number_input("العمر:", 15, 85, 25)
+    u_blood = c2.selectbox("فصيلة الدم:", ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-", "غير معروف"])
+    
+    st.markdown("---")
+    diabetes = st.selectbox("حالة السكر:", ["سليم", "مقاومة أنسولين", "سكر نوع 1", "سكر نوع 2"])
+    pressure = st.selectbox("ضغط الدم:", ["طبيعي", "مرتفع مزمن", "منخفض"])
+    organs = st.multiselect("مشاكل صحية مزمنة:", ["القلب", "الكلى", "الغدة الدرقية", "لا يوجد"])
 
-if prompt := st.chat_input():
-    if not openai_api_key:
-        st.info("Please add your OpenAI API key to continue.")
-        st.stop()
+st.divider()
 
-    client = OpenAI(api_key=openai_api_key)
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.chat_message("user").write(prompt)
-    response = client.chat.completions.create(model="gpt-3.5-turbo", messages=st.session_state.messages)
-    msg = response.choices[0].message.content
-    st.session_state.messages.append({"role": "assistant", "content": msg})
-    st.chat_message("assistant").write(msg)
+# 3. اختيار الحالة
+cat = st.selectbox("القسم الرئيسي:", list(LUVIA_ENCYCLOPEDIA.keys()))
+case = st.selectbox("الحالة المراد علاجها:", list(LUVIA_ENCYCLOPEDIA[cat].keys()))
+u_desc = st.text_area("✍️ شرح الحالة:")
+
+# 4. إصدار التقرير النظيف
+if st.button("🚀 إصدار البروتوكول الموسوعي"):
+    if not u_name:
+        st.error("يرجى إدخال اسم العميل!")
+    else:
+        d = LUVIA_ENCYCLOPEDIA[cat][case]
+        
+        st.success(f"✅ بروتوكول معتمد لـ: {u_name}")
+        
+        # عرض المعلومات بصناديق Streamlit النظيفة (تمنع ظهور الأكواد المزعجة)
+        st.subheader(f"📄 الحالة: {case}")
+        
+        with st.container():
+            st.info(f"**🔬 التحليل السريري:**\n\n{d['تحليل']}")
+            st.warning(f"**🧪 العلاج الخارجي (التركيبة):**\n\n{d['علاج']}")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.success(f"🍏 **مسموحات الأكل:**\n\n{d['مسموح']}")
+            with col2:
+                st.error(f"🚫 **الممنوعات الصارمة:**\n\n{d['ممنوع']}")
+            
+            st.write(f"**⏳ النتائج المتوقعة خلال:** {d['نتائج']}")
+            
+            # تنبيهات طبية ذكية
+            if diabetes != "سليم":
+                st.warning("⚠️ ملاحظة: النظام الغذائي معدل ليتوافق مع حالة السكر.")
+            if any(x in ["القلب", "الكلى"] for x in organs):
+                st.error("⚠️ تنبيه طبي: يرجى الحذر في استخدام الأعشاب المدرة للبول لصحة الكلى والقلب.")
+
+        st.balloons()
